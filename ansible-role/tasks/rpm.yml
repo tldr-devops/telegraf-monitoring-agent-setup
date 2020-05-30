@@ -1,0 +1,17 @@
+---
+- name: Add influxdata gpg key
+  rpm_key:
+    state: present
+    key: https://repos.influxdata.com/influxdb.key
+
+- name: Add influxdata repo
+  yum_repository:
+    name: influxdb
+    description: InfluxDB Repository - RHEL \$releasever
+    baseurl: https://repos.influxdata.com/rhel/\$releasever/\$basearch/stable
+    gpgcheck: 1
+    gpgkey: https://repos.influxdata.com/influxdb.key
+    state: present
+
+- name: Install telegraf packages
+  yum: name=telegraf state=present update_cache=yes
