@@ -1,0 +1,59 @@
+version: '3.5'
+services:
+ zabbix-server:
+  image: zabbix/zabbix-server-mysql:ubuntu-3.4-latest
+  env_file:
+    - .env_db
+  depends_on:
+   - mysql-server
+  logging:
+    driver: json-file
+    options:
+      max-size: "100m"
+      max-file: "5"
+
+ zabbix-proxy-sqlite3:
+  image: zabbix/zabbix-proxy-sqlite3:ubuntu-3.4-latest
+  env_file:
+    - .env_prx
+  logging:
+    driver: json-file
+    options:
+      max-size: "100m"
+      max-file: "5"
+
+ zabbix-web-nginx-mysql:
+  image: zabbix/zabbix-web-nginx-mysql:ubuntu-3.4-latest
+  env_file:
+    - .env_db
+  depends_on:
+   - mysql-server
+   - zabbix-server
+  logging:
+    driver: json-file
+    options:
+      max-size: "100m"
+      max-file: "5"
+
+ zabbix-agent:
+  image: zabbix/zabbix-agent:ubuntu-3.4-latest
+  volumes:
+    - ./prom2zabbix.py:/usr/sbin/prom2zabbix.py:ro
+  env_file:
+   - .env_agent
+  # command: ["/usr/sbin/zabbix_agentd", "--foreground", "-c", "/etc/zabbix/zabbix_agentd.conf"]
+  logging:
+    driver: json-file
+    options:
+      max-size: "100m"
+      max-file: "5"
+
+ mysql-server:
+  image: mariadb
+  env_file:
+    - .env_db
+  logging:
+    driver: json-file
+    options:
+      max-size: "100m"
+      max-file: "5"

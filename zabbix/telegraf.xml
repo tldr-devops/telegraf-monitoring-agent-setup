@@ -29,7 +29,7 @@
                     <snmp_community/>
                     <multiplier>0</multiplier>
                     <snmp_oid/>
-                    <key>system.run[&quot;prom2zabbix.py &amp;&amp; zabbix_sender -T -i /tmp/prom2zabbix.keys -c /etc/zabbix/zabbix_agentd.conf &amp;&amp; zabbix_sender -T -i /tmp/prom2zabbix.metrics -c /etc/zabbix/zabbix_agentd.conf&quot;]</key>
+                    <key>system.run[&quot;prom2zabbix.py -s {$TELEGRAF_URL} &amp;&amp; (zabbix_sender -i /tmp/prom2zabbix.keys {$TELEGRAF_SENDER_OPTIONS} ; zabbix_sender -i /tmp/prom2zabbix.metrics {$TELEGRAF_SENDER_OPTIONS}) &quot;]</key>
                     <delay>10</delay>
                     <history>1</history>
                     <trends>0</trends>
@@ -187,7 +187,16 @@
                     <host_prototypes/>
                 </discovery_rule>
             </discovery_rules>
-            <macros/>
+            <macros>
+                <macro>
+                    <macro>{$TELEGRAF_URL}</macro>
+                    <value>http://127.0.0.1:9273/metrics</value>
+                </macro>
+                <macro>
+                    <macro>{$TELEGRAF_SENDER_OPTIONS}</macro>
+                    <value> -T -c /etc/zabbix/zabbix_agentd.conf</value>
+                </macro>
+            </macros>
             <templates/>
             <screens/>
         </template>

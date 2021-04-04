@@ -1,15 +1,21 @@
 - include: deb.yml
   when: ansible_pkg_mgr == 'apt'
+  tags:
+  - install
 
 - include: rpm.yml
   when: ansible_pkg_mgr == 'yum'
+  tags:
+  - install
 
 - name: Copy custom telegraf configuration
   template:
     src: telegraf.conf.j2
-    dest: /etc/telegraf/telegraf.conf
-    owner: root
-    group: root
+    dest: "{{ telegraf_config_path }}"
+    owner: "{{ telegraf_config_user }}"
+    group: "{{ telegraf_config_user }}"
     mode: 0640
     backup: yes
   notify: restart telegraf
+  tags:
+  - configure

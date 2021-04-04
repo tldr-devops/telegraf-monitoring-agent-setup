@@ -65,6 +65,8 @@ def main():
     metrics = parse(options.source)
 
     data = {"data": []}
+    keys = {}
+    # {\"{#LINE_RAW}\": \"system_n_cpus{host=\\\"telegraf\\\"} 4\", \"{#METRIC}\": \"system_n_cpus\", \"{#SOURCE}\": \"http://10.89.3.3:9273/metrics\", \"{#VALUE}\": \"4\", \"{#HELP}\": \"# HELP system_n_cpus Telegraf collected metric\", \"{#LABELS}\": \"{host=\\\"telegraf\\\"}\", \"{#TYPE}\": \"# TYPE system_n_cpus gauge\", \"{#TIMESTAMP}\": 1617554535}
     with open(options.destination + '.metrics', 'w') as f:
         for metric in metrics:
             if not metric['timestamp']:
@@ -90,9 +92,20 @@ def main():
                 metric['timestamp'],
                 metric['value']))
 
-    data = json.dumps(data)
-    escaped_data = data.replace('\\', '\\\\').replace('"', '\\"')
+            # addition for metric labels macro
+            if metric['metric'] not in keys:
+                keys[metric['metric']] = {"data": []}
+            keys[metric['metric']]["data"].append({"{#LABELS}": metric['labels']})
+
     with open(options.destination + '.keys', 'w') as f:
+        for metric in keys:
+            f.write('- telegraf[%s] %s "%s"\n' % (
+            metric,
+            seconds,
+            json.dumps(keys[metric]
+                       ).replace('\\', '\\\\').replace('"', '\\"')))
+        data = json.dumps(data)
+        escaped_data = data.replace('\\', '\\\\').replace('"', '\\"')
         f.write('- telegraf[keys] %s "%s"\n' % (
             seconds,
             escaped_data))

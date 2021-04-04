@@ -1,0 +1,12 @@
+- name: Generate configs
+  hosts:
+    - localhost
+  vars: []
+  vars_files:
+    - ../vars/telegraf.yml
+
+  tasks:
+    - name: Create telegraf config
+      template:
+        src: ../templates/telegraf.conf.j2
+        dest: ../telegraf/telegraf.conf
