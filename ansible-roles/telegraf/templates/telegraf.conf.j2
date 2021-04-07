@@ -2,6 +2,15 @@
 # For default settings and comments check `telegraf config`
 # Or `less telegraf.conf.default`
 
+# Unlike the `global_tags` and `agent` tables,
+# any plugin can be defined multiple times
+# and each instance will run independently.
+# This allows you to have plugins defined
+# with differing configurations as needed
+# within a single Telegraf process.
+# You can add custom conf files into /etc/telegraf/telegraf.d
+# https://github.com/influxdata/telegraf/blob/master/docs/CONFIGURATION.md
+
 # Telegraf Configuration
 #
 # Telegraf is entirely plugin driven. All metrics are gathered from the

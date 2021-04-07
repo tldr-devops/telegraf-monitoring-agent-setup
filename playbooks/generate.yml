@@ -1,12 +1,22 @@
 - name: Generate configs
   hosts:
     - localhost
-  vars: []
   vars_files:
     - ../vars/telegraf.yml
+  vars:
+    telegraf_config_path: ../telegraf/telegraf.conf
 
   tasks:
     - name: Create telegraf config
       template:
         src: ../templates/telegraf.conf.j2
-        dest: ../telegraf/telegraf.conf
+        dest: "{{ telegraf_config_path }}"
+
+    - name: Check that the docker socket exists
+      stat:
+        path: "{{ docker_socket_path }}"
+      register: docker_socket
+
+    - name: Include docker input configuration
+      include_tasks: ../ansible-roles/telegraf/tasks/input-docker.yml
+      when: docker_socket.stat.exists

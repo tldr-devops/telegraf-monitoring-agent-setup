@@ -16,6 +16,14 @@ try:
 except:
     from urllib import urlopen
 
+METRICS = {
+  'default': {
+    'sort_labels': ['name', 'id', 'host', 'path', 'device', 'source', 'cpu'],
+  },
+  'docker_container_': {
+    'sort_labels': ['host', 'source', 'device', 'cpu'],
+  },
+}
 
 def parse(source='http://127.0.0.1:9273/metrics'):
     # https://prometheus.io/docs/practices/naming/
@@ -66,24 +74,48 @@ def main():
 
     data = {"data": []}
     keys = {}
-    # {\"{#LINE_RAW}\": \"system_n_cpus{host=\\\"telegraf\\\"} 4\", \"{#METRIC}\": \"system_n_cpus\", \"{#SOURCE}\": \"http://10.89.3.3:9273/metrics\", \"{#VALUE}\": \"4\", \"{#HELP}\": \"# HELP system_n_cpus Telegraf collected metric\", \"{#LABELS}\": \"{host=\\\"telegraf\\\"}\", \"{#TYPE}\": \"# TYPE system_n_cpus gauge\", \"{#TIMESTAMP}\": 1617554535}
-    with open(options.destination + '.metrics', 'w') as f:
-        for metric in metrics:
-            if not metric['timestamp']:
-                metric['timestamp'] = seconds
-            if not metric['labels']:
-                metric['labels'] = '{}'
+
+    # fill and prepare metric
+    for metric in metrics:
+        if not metric['timestamp']:
+            metric['timestamp'] = seconds
+        if not metric['labels']:
+            metric['labels'] = '{}'
+        else:
+            # limit lenght of metric because of zabbix limit
+            # for graph name even 132 char is too long
+            if len(metric['metric']) + len(metric['labels']) > 200:
+                metric['original_labels'] = metric['labels'].replace(',', ';')
+                short_labels = []
+                for label in metric['labels'].lstrip('{').rstrip('}').split(','):
+                    for key in METRICS.keys():
+                        if key in metric['metric'] and key != 'default':
+                            for l in METRICS[key]['sort_labels']:
+                                if l in label:
+                                    short_labels.append(label)
+                                    break
+                    metric['labels'] = '{' + ';'.join(short_labels) + '}'
             else:
                 metric['labels'] = metric['labels'].replace(',', ';')
 
-            # hacks
-            if metric['metric'] == 'procstat_created_at':
-                metric['value'] = metric['value'].replace('e+18', 'e+09')
+        # hacks
+        if metric['metric'] == 'procstat_created_at':
+            metric['value'] = metric['value'].replace('e+18', 'e+09')
 
-            m = {}
-            for k, v in metric.items():
-                m["{#%s}" % k.upper()] = v
-            data["data"].append(m)
+        m = {}
+        for k, v in metric.items():
+            m["{#%s}" % k.upper()] = v
+        data["data"].append(m)
+
+        # addition for metric labels macro
+        if metric['metric'] not in keys:
+            keys[metric['metric']] = {"data": []}
+        keys[metric['metric']]["data"].append({
+            "{#LABELS}": metric['labels']})
+
+    # write metrics
+    with open(options.destination + '.metrics', 'w') as f:
+        for metric in metrics:
             # https://www.zabbix.com/documentation/3.0/manpages/zabbix_sender
             escaped_labels = metric['labels'].replace('\\', '\\\\').replace('"', '\\"')
             f.write('- "telegraf[%s,%s]" %s %s\n' % (
@@ -92,21 +124,17 @@ def main():
                 metric['timestamp'],
                 metric['value']))
 
-            # addition for metric labels macro
-            if metric['metric'] not in keys:
-                keys[metric['metric']] = {"data": []}
-            keys[metric['metric']]["data"].append({"{#LABELS}": metric['labels']})
-
+    # write keys
     with open(options.destination + '.keys', 'w') as f:
         for metric in keys:
-            f.write('- telegraf[%s] %s "%s"\n' % (
+            f.write('- "telegraf[keys, %s]" %s "%s"\n' % (
             metric,
             seconds,
             json.dumps(keys[metric]
                        ).replace('\\', '\\\\').replace('"', '\\"')))
         data = json.dumps(data)
         escaped_data = data.replace('\\', '\\\\').replace('"', '\\"')
-        f.write('- telegraf[keys] %s "%s"\n' % (
+        f.write('- "telegraf[keys]" %s "%s"\n' % (
             seconds,
             escaped_data))
 

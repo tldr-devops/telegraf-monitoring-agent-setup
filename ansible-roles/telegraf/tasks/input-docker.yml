@@ -1,0 +1,22 @@
+- name: Ensure telegraf config contains docker socket
+  lineinfile:
+    path: "{{ telegraf_config_path }}"
+    regexp: "(${HOST_MOUNT_PREFIX})?{{ docker_socket_path }}"
+    state: absent
+  check_mode: yes
+  changed_when: false
+  register: docker_already_configured
+  tags:
+    - configure
+
+- name: Insert docker input into telegraf config
+  blockinfile:
+    path: "{{ telegraf_config_path }}"
+    block: |
+      [[inputs.docker]]
+        endpoint = "unix://${HOST_MOUNT_PREFIX}{{ docker_socket_path }}"
+        source_tag = true
+    marker: "# {mark} ANSIBLE MANAGED BLOCK 'DOCKER AUTODETECT'"
+  when: not docker_already_configured.found
+  tags:
+    - configure

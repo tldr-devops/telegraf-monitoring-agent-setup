@@ -1,5 +1,6 @@
 telegraf_config_path: /etc/telegraf/telegraf.conf
 telegraf_config_user: root
+docker_socket_path: /run/docker.sock # usually /var/run is a simlink to /run/, so for setup in container we should use /run/docker.sock instead of /var/run/docker.sock
 
 telegraf:
   global_tags: []
@@ -35,8 +36,6 @@ telegraf:
   inputs.swap: []
   inputs.system:
     - fielddrop = ["uptime_format"]
-  inputs.procstat:
-    - 'exe = ".*" # `pgrep <exe>`, collect metrics about ALL processes'
   outputs.prometheus_client:
     - listen = ":9273"
     - metric_version = 2
@@ -51,3 +50,8 @@ telegraf:
     - '# tls_key = "/etc/ssl/telegraf.key"'
     - '# tls_allowed_cacerts = ["/etc/telegraf/clientca.pem"]'
     - '# export_timestamp = false'
+#  inputs.procstat:
+#    - 'exe = ".*" # `pgrep <exe>`, collect metrics about ALL processes'
+#  inputs.docker:
+#    - endpoint = "unix://${HOST_MOUNT_PREFIX}/var/run/docker.sock"
+#    - source_tag = true

@@ -137,7 +137,8 @@
                             <description>{#HELP}&#13;
 {#TYPE}&#13;
 # SOURCE {#SOURCE}&#13;
-{#METRIC}{{#LABELS}}</description>
+{#METRIC}{{#LABELS}
+{{#ORIGINAL_LABELS}}}</description>
                             <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
@@ -194,7 +195,7 @@
                 </macro>
                 <macro>
                     <macro>{$TELEGRAF_SENDER_OPTIONS}</macro>
-                    <value> -T -c /etc/zabbix/zabbix_agentd.conf</value>
+                    <value> -T -c /etc/zabbix/zabbix_agentd.conf -vv</value>
                 </macro>
             </macros>
             <templates/>
